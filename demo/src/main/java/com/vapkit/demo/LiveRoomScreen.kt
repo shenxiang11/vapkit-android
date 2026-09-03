@@ -33,6 +33,8 @@ import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.VolumeOff
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -86,6 +88,7 @@ fun LiveRoomScreen(modifier: Modifier = Modifier) {
     }
     var playingGift by remember { mutableStateOf(false) }
     var sendError by remember { mutableStateOf<String?>(null) }
+    var backgroundMuted by remember { mutableStateOf(true) }
 
     DisposableEffect(player) {
         player.onStateChanged = { state ->
@@ -111,7 +114,7 @@ fun LiveRoomScreen(modifier: Modifier = Modifier) {
     }
 
     Box(modifier.fillMaxSize()) {
-        LoopingBackgroundVideo(Modifier.fillMaxSize())
+        LoopingBackgroundVideo(muted = backgroundMuted, modifier = Modifier.fillMaxSize())
         if (playingGift) {
             GiftOverlay(player, Modifier.fillMaxSize())
         }
@@ -124,7 +127,9 @@ fun LiveRoomScreen(modifier: Modifier = Modifier) {
             TopBar(
                 following = following,
                 panelOpen = panelOpen,
+                backgroundMuted = backgroundMuted,
                 onFollow = { following = !following },
+                onToggleMute = { backgroundMuted = !backgroundMuted },
                 onClosePanel = { panelOpen = false },
             )
             Spacer(Modifier.weight(1f))
@@ -184,8 +189,10 @@ fun LiveRoomScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun LoopingBackgroundVideo(modifier: Modifier = Modifier) {
+private fun LoopingBackgroundVideo(muted: Boolean, modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    val holder = remember { BackgroundPlayerHolder() }
+
     AndroidView(
         modifier = modifier,
         factory = {
@@ -194,7 +201,6 @@ private fun LoopingBackgroundVideo(modifier: Modifier = Modifier) {
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT,
                 )
-                var player: MediaPlayer? = null
                 surfaceTextureListener = object : TextureView.SurfaceTextureListener {
                     override fun onSurfaceTextureAvailable(surface: android.graphics.SurfaceTexture, w: Int, h: Int) {
                         val media = MediaPlayer()
@@ -203,15 +209,14 @@ private fun LoopingBackgroundVideo(modifier: Modifier = Modifier) {
                         }
                         media.isLooping = true
                         media.setSurface(android.view.Surface(surface))
+                        holder.attach(media)
                         media.setOnPreparedListener { it.start() }
                         media.prepareAsync()
-                        player = media
                     }
 
                     override fun onSurfaceTextureSizeChanged(surface: android.graphics.SurfaceTexture, w: Int, h: Int) = Unit
                     override fun onSurfaceTextureDestroyed(surface: android.graphics.SurfaceTexture): Boolean {
-                        player?.release()
-                        player = null
+                        holder.release()
                         return true
                     }
 
@@ -219,7 +224,32 @@ private fun LoopingBackgroundVideo(modifier: Modifier = Modifier) {
                 }
             }
         },
+        update = { holder.muted = muted },
     )
+}
+
+private class BackgroundPlayerHolder {
+    var player: MediaPlayer? = null
+    var muted: Boolean = true
+        set(value) {
+            field = value
+            applyVolume()
+        }
+
+    fun attach(player: MediaPlayer) {
+        this.player = player
+        applyVolume()
+    }
+
+    fun release() {
+        player?.release()
+        player = null
+    }
+
+    private fun applyVolume() {
+        val volume = if (muted) 0f else 1f
+        player?.setVolume(volume, volume)
+    }
 }
 
 @Composable
@@ -251,7 +281,9 @@ private fun GiftOverlay(player: VapPlayer, modifier: Modifier = Modifier) {
 private fun TopBar(
     following: Boolean,
     panelOpen: Boolean,
+    backgroundMuted: Boolean,
     onFollow: () -> Unit,
+    onToggleMute: () -> Unit,
     onClosePanel: () -> Unit,
 ) {
     Row(
@@ -286,8 +318,26 @@ private fun TopBar(
             )
         }
         Spacer(Modifier.weight(1f))
+        IconButton(
+            onClick = onToggleMute,
+            modifier = Modifier
+                .size(44.dp)
+                .background(Color(0f, 0f, 0f, 0.36f), CircleShape),
+        ) {
+            Icon(
+                if (backgroundMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
+                contentDescription = if (backgroundMuted) "打开声音" else "关闭声音",
+                tint = Color.White,
+            )
+        }
         if (panelOpen) {
-            IconButton(onClick = onClosePanel) {
+            Spacer(Modifier.width(8.dp))
+            IconButton(
+                onClick = onClosePanel,
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(Color(0f, 0f, 0f, 0.36f), CircleShape),
+            ) {
                 Icon(Icons.Default.Close, contentDescription = "关闭礼物栏", tint = Color.White)
             }
         }
