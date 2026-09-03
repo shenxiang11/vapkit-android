@@ -20,6 +20,26 @@ Demo 是直播间送礼页：背景循环视频，底部礼物栏，点发送后
 
 加礼物：把带 `vapc` 的 MP4 放到 `demo/src/main/assets/gifts/`，再在 `demo/src/main/java/com/vapkit/demo/GiftCatalog.kt` 加一行。`assetName` 留 `null` 的格子会显示「待上架」。
 
+## 接入
+
+`minSdk` 26。`settings.gradle.kts` 加上 JitPack：
+
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
+}
+```
+
+模块依赖：
+
+```kotlin
+implementation("com.github.shenxiang11:vapkit-android:0.1.0")
+```
+
 ## 用法
 
 ```kotlin

@@ -1,6 +1,7 @@
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
+    id("maven-publish")
 }
 
 android {
@@ -23,6 +24,26 @@ android {
 
     testOptions {
         unitTests.isReturnDefaultValues = true
+    }
+
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
+    }
+}
+
+publishing {
+    publications {
+        register<MavenPublication>("release") {
+            groupId = "com.github.shenxiang11"
+            artifactId = "vapkit-android"
+            version = "0.1.0"
+
+            afterEvaluate {
+                from(components["release"])
+            }
+        }
     }
 }
 
