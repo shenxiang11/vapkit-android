@@ -16,7 +16,7 @@
 
 Demo 是直播间送礼页：背景循环视频，底部礼物栏，点发送后播 VAP 并自动收起面板。
 
-可送：星际兔、月下玉兔、热血一拳、星光应援、告白花语。
+可送：星际兔、月下玉兔、热血一拳、星光应援、告白花语、超级火箭。
 
 加礼物：把带 `vapc` 的 MP4 放到 `demo/src/main/assets/gifts/`，再在 `demo/src/main/java/com/vapkit/demo/GiftCatalog.kt` 加一行。`assetName` 留 `null` 的格子会显示「待上架」。
 
